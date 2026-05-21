@@ -2,12 +2,11 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install deps first (cached layer)
+# Copy everything in the build context (apps/backend/)
 COPY pyproject.toml ./
-RUN pip install --no-cache-dir .
-
-# Copy source
 COPY src/ ./src/
+
+RUN pip install --no-cache-dir .
 
 EXPOSE 8000
 
