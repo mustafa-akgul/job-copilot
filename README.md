@@ -1,110 +1,54 @@
 # Job Copilot
 
-**Fill job application forms in one click — powered by your CV, not copy-paste.**
+> Fill any job application form in one click — powered by your CV.
 
-Job Copilot is a Chrome extension + local AI backend that reads your CV once, then automatically fills any job application form: LinkedIn, Workday, Greenhouse, Lever, company portals. You always control the Submit button.
+Job Copilot is a Chrome extension backed by a cloud API. Upload your CV once, then auto-fill LinkedIn, Workday, Greenhouse, Lever, Ashby, and any other application form. You always control the Submit button.
 
 ---
 
-## Quick start (5 minutes)
+## Features
 
-### Prerequisites
-- Python 3.11+ — [python.org](https://www.python.org/downloads/)
-- Node.js 18+ — [nodejs.org](https://nodejs.org/)
-- [Ollama](https://ollama.com/) (free, runs locally) — or an OpenAI / Anthropic API key
-
-### 1 — Start the backend
-
-```powershell
-# In PowerShell, from the repo root:
-.\start.ps1
-```
-
-This installs dependencies, runs all tests, and starts the API at `http://localhost:8000`.
-
-**First time only — pull the default AI model:**
-```powershell
-ollama pull qwen2.5-coder:7b
-```
-
-### 2 — Load the Chrome extension
-
-```powershell
-# In a second terminal:
-.\start-extension.ps1
-```
-
-Then in Chrome:
-1. Go to `chrome://extensions`
-2. Enable **Developer mode** (top right)
-3. Click **Load unpacked**
-4. Select `apps\extension\build\chrome-mv3-dev`
-
-### 3 — Upload your CV
-
-Click the Job Copilot icon in your toolbar → upload your PDF or DOCX. Parsing takes ~30 seconds on first run (local AI).
-
-### 4 — Fill any form
-
-Open any job application page → click **Scan & fill this page**. Done.
+- **One-click fill** — scans visible form fields and maps them to your parsed CV profile
+- **Three fill modes** — instant auto-fill, inline suggestion overlay, and a manual-review card for low-confidence fields
+- **Multi-persona** — maintain separate profiles (e.g. "backend-engineer", "product-manager") and switch with one click
+- **JD Analyzer** — paste a job description to see a match score against your profile and a list of missing skills
+- **Cover letter generator** — generate a tailored cover letter from your profile and the JD, with tone control
+- **Application tracker** — log every application with status (applied → screening → interview → offer)
+- **Platform adapters** — native field detection for Workday, Greenhouse, Lever, and Ashby
 
 ---
 
 ## How it works
 
 ```
-Your CV (PDF/DOCX)
-    └─ AI parses → structured profile (saved locally)
-         └─ You open a job application page
-              └─ Extension scans visible form fields
-                   └─ Backend fuzzy-matches + AI maps each field to your profile
-                        └─ Auto-filled: your name, email, phone, LinkedIn, etc.
-                             └─ You review suggestions → click Submit yourself
+CV upload (PDF / DOCX)
+  └─ Cloud API parses → structured profile stored in your account
+       └─ Open any job application page
+            └─ Extension scans form fields
+                 └─ Fuzzy match + AI maps each field to your profile
+                      └─ Fields auto-filled — you review and submit
 ```
 
-**Three fill tiers:**
+**Fill tiers:**
 
-| Tier | Condition | What happens |
+| Tier | Condition | Result |
 |---|---|---|
-| `auto` | High confidence + value present | Filled instantly (green flash) |
-| `suggest` | Medium confidence | Blue "✓ Fill: [value]" button appears next to the field |
-| `approve` | Low confidence or missing value | Card appears in the popup — you type/confirm |
-
-**You always click Submit. Nothing is ever auto-submitted.**
+| Auto | Confidence ≥ 92 % + value present | Filled instantly with a green flash |
+| Suggest | Confidence ≥ 78 % | Blue "✓ [value]" button appears next to the field |
+| Approve | Low confidence or missing value | Card in the popup — you type the value |
 
 ---
 
-## AI providers
+## Tech stack
 
-| Provider | Setup | Speed | Cost |
-|---|---|---|---|
-| **Ollama** (default) | `ollama pull qwen2.5-coder:7b` | ~15–30s/parse | Free |
-| **OpenAI** | Set `OPENAI_API_KEY` in `apps/backend/.env` | ~3s/parse | ~$0.01/CV |
-| **Anthropic** | Set `ANTHROPIC_API_KEY` in `apps/backend/.env` | ~5s/parse | ~$0.01/CV |
-
-Switch provider:
-```powershell
-.\start.ps1 -Provider openai
-# or
-.\start.ps1 -Provider anthropic
-```
-
----
-
-## Running tests
-
-```powershell
-cd apps\backend
-python -m pytest tests/ -v
-```
-
-**54 tests, 0 failures** — covers:
-- Fuzzy field matching and tier logic
-- Profile path resolution (nested fields, arrays)
-- Boolean/URL value coercion
-- LLM timeout graceful fallback
-- All API endpoints (auth, CRUD, CV upload, form mapping)
-- File size limit (10 MB) and format validation
+| Layer | Technology |
+|---|---|
+| Extension | Plasmo (Chrome MV3), React, TypeScript |
+| Backend | FastAPI, Python 3.11, SQLAlchemy (async) |
+| Auth | Google OAuth via Supabase (`chrome.identity`) |
+| Database | SQLite (dev) · Postgres via Supabase (production) |
+| AI | OpenAI `gpt-4o-mini` (default) · Anthropic `claude-haiku` |
+| Deployment | Railway (backend) · Chrome Web Store (extension) |
 
 ---
 
@@ -112,59 +56,89 @@ python -m pytest tests/ -v
 
 ```
 job-copilot/
-├── start.ps1                  ← one-command launcher (backend + tests)
-├── start-extension.ps1        ← Chrome extension dev server
 ├── apps/
-│   ├── backend/               ← FastAPI + SQLite
+│   ├── backend/
 │   │   ├── src/job_copilot_api/
-│   │   │   ├── routers/       ← /health /cv /profiles /forms
-│   │   │   ├── services/      ← mapping, cv_parser, llm, db
-│   │   │   └── schemas/       ← CVProfile, FieldMapping, FormField
-│   │   └── tests/             ← 54 passing tests
-│   └── extension/             ← Plasmo Chrome extension
+│   │   │   ├── routers/        # cv, profiles, forms, personas, jd, ai, applications
+│   │   │   ├── services/       # cv_parser, mapping, llm, writer, embeddings, db
+│   │   │   └── schemas/        # CVProfile, FieldMapping, JDAnalysis, GenerateResponse
+│   │   └── tests/              # 71 passing tests
+│   └── extension/
 │       └── src/
-│           ├── popup.tsx      ← main UI
-│           ├── background.ts  ← service worker / API calls
-│           ├── contents/      ← in-page form scanner + suggest overlay
-│           └── lib/           ← API client, DOM extractor, injector
-└── packages/shared-types/     ← (future codegen target)
+│           ├── popup.tsx
+│           ├── background.ts
+│           ├── contents/
+│           │   ├── form-detector.ts
+│           │   └── adapters/   # workday, greenhouse, lever, ashby
+│           └── lib/            # api, auth, dom, inject, platform-detect
+└── packages/shared-types/
 ```
 
 ---
 
-## Configuration
+## API endpoints
 
-All settings live in `apps/backend/.env` (created automatically from `.env.example`):
-
-```env
-JOB_COPILOT_LLM_PROVIDER=ollama        # ollama | openai | anthropic
-JOB_COPILOT_LLM_MODEL=qwen2.5-coder:7b
-JOB_COPILOT_OPENAI_API_KEY=
-JOB_COPILOT_ANTHROPIC_API_KEY=
-JOB_COPILOT_FUZZY_THRESHOLD=82         # 0-100, lower = more matches
-```
-
-Extension settings (API URL, token) are in the extension's **Options** page (gear icon).
-
----
-
-## Roadmap
-
-| Phase | Scope | Status |
+| Method | Path | Description |
 |---|---|---|
-| 0 | Walking skeleton | ✅ |
-| 1 | Real CV parsing, fuzzy mapping, SQLite, polished popup | ✅ |
-| 2 | LLM mapper for residual fields, HITL card, in-page suggest overlay | ✅ |
-| 3 | Multi-profile / persona switcher, JD analyzer + ATS score | next |
-| 4 | AI writing — cover letter, "why this role", short bio | |
-| 5 | Platform-specific adapters (Workday, Greenhouse, Lever, Ashby) | |
-| 6 | Postgres + Supabase auth + multi-tenancy | |
+| `POST` | `/api/v1/cv/parse` | Upload CV → parse and store profile |
+| `GET` | `/api/v1/profiles` | List all profiles |
+| `PUT` | `/api/v1/profiles/{persona}` | Upsert a profile |
+| `GET` | `/api/v1/personas` | List personas with metadata |
+| `POST` | `/api/v1/personas/{persona}/clone` | Clone a persona |
+| `POST` | `/api/v1/forms/map` | Map form fields → profile values |
+| `POST` | `/api/v1/jd/analyze` | Analyze job description + match score |
+| `POST` | `/api/v1/ai/generate` | Generate cover letter |
+| `GET` | `/api/v1/profiles/{persona}/relevant` | Semantic CV section search |
+| `CRUD` | `/api/v1/applications` | Application tracking |
+
+Full interactive docs available at `/docs` when running locally.
+
+---
+
+## Local development
+
+**Backend**
+
+```bash
+cd apps/backend
+pip install -e ".[dev]"
+cp .env.example .env   # add OPENAI_API_KEY
+uvicorn job_copilot_api.main:app --reload --port 8000
+```
+
+**Extension**
+
+```bash
+cd apps/extension
+npm install --ignore-scripts
+npm run dev
+```
+
+Load `apps/extension/build/chrome-mv3-dev` via `chrome://extensions → Developer mode → Load unpacked`.
+
+**Tests**
+
+```bash
+cd apps/backend
+python -m pytest tests/ -v   # 71 tests
+```
+
+---
+
+## Environment variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `JOB_COPILOT_OPENAI_API_KEY` | Yes | OpenAI API key |
+| `JOB_COPILOT_SUPABASE_JWT_SECRET` | Production | Supabase JWT secret for auth |
+| `JOB_COPILOT_DATABASE_URL` | Production | Postgres connection string |
+| `JOB_COPILOT_LLM_PROVIDER` | No | `openai` (default) or `anthropic` |
+| `JOB_COPILOT_FUZZY_THRESHOLD` | No | Match threshold 0–100 (default: 82) |
 
 ---
 
 ## Privacy
 
-- Your CV is parsed locally (Ollama) or via your own API key.
-- Parsed data is stored only in `apps/backend/data/jobcopilot.db` on your machine.
-- No data leaves your machine unless you configure OpenAI/Anthropic.
-- The extension never touches any form without your click.
+- Your CV data is stored only in your account — never shared or used for training.
+- The extension never auto-submits a form. Every submission is your explicit action.
+- API keys are stored server-side and never exposed to the browser.
