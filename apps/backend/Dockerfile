@@ -3,8 +3,8 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Copy everything in the build context (apps/backend/)
-COPY pyproject.toml ./
-COPY src/ ./src/
+COPY apps/backend/pyproject.toml ./
+COPY apps/backend/src/ ./src/
 
 RUN pip install --no-cache-dir .
 

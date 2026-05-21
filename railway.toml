@@ -1,6 +1,5 @@
 [build]
-rootDirectory = "apps/backend"
-dockerfilePath = "Dockerfile"
+dockerfilePath = "apps/backend/Dockerfile"
 
 [deploy]
 healthcheckPath = "/health"
