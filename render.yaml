@@ -5,12 +5,6 @@ services:
     dockerfilePath: apps/backend/Dockerfile
     healthCheckPath: /health
     envVars:
-      - key: JOB_COPILOT_OPENAI_API_KEY
-        sync: false
-      - key: JOB_COPILOT_SUPABASE_JWT_SECRET
-        sync: false
-      - key: JOB_COPILOT_DATABASE_URL
-        sync: false
       - key: JOB_COPILOT_LLM_PROVIDER
         value: openai
       - key: JOB_COPILOT_LLM_MODEL
