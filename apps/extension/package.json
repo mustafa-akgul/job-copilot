@@ -1,0 +1,43 @@
+{
+  "name": "job-copilot-extension",
+  "displayName": "Job Copilot",
+  "version": "0.1.0",
+  "description": "AI-powered job application copilot — Chrome extension.",
+  "private": true,
+  "scripts": {
+    "dev": "plasmo dev",
+    "build": "plasmo build",
+    "package": "plasmo package"
+  },
+  "dependencies": {
+    "@plasmohq/storage": "1.13.0",
+    "plasmo": "0.88.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "sharp": "^0.34.5"
+  },
+  "devDependencies": {
+    "@types/chrome": "0.0.270",
+    "@types/node": "20.14.0",
+    "@types/react": "18.3.3",
+    "@types/react-dom": "18.3.0",
+    "typescript": "5.5.3"
+  },
+  "manifest": {
+    "name": "Job Copilot",
+    "description": "AI copilot for job applications.",
+    "host_permissions": [
+      "<all_urls>"
+    ],
+    "permissions": [
+      "activeTab",
+      "storage",
+      "scripting",
+      "identity"
+    ],
+    "action": {
+      "default_title": "Job Copilot",
+      "default_popup": "popup.html"
+    }
+  }
+}

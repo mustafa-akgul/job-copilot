@@ -1,0 +1,32 @@
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# node / plasmo
+node_modules/
+build/
+.plasmo/
+dist/
+
+# env
+.env
+.env.local
+!.env.example
+
+# local SQLite DB — never commit
+apps/backend/data/
+
+# extension zip packages
+*.zip
+
+# IDE
+.vscode/
+.idea/
+
+# os
+.DS_Store
+Thumbs.db
